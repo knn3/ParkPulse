@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: parkpulse-postgres
+    environment:
+      POSTGRES_USER: parkpulse
+      POSTGRES_PASSWORD: parkpulse
+      POSTGRES_DB: parkpulse
+    ports:
+      - "5433:5432"
+
+  api:
+    build: ../apps/api
+    container_name: parkpulse-api
+    ports:
+      - "4000:4000"
+    volumes:
+      - ../apps/api:/app
+    depends_on:
+      - postgres
+    environment:
+      - PORT=4000
+      - DATABASE_URL=postgresql://parkpulse:parkpulse@postgres:5432/parkpulse
+
+  worker:
+    build: ../apps/worker
+    container_name: parkpulse-worker
+    volumes:
+      - ../apps/worker:/app
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://parkpulse:parkpulse@postgres:5432/parkpulse
