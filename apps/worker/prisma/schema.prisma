@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  reports   Report[]
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  userId      String
+  lat         Float
+  lng         Float
+  createdAt   DateTime @default(now())
+  photoS3Key  String?
+  status      String   @default("UPLOADED")
+  score       Float?
+  reason      String?
+
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Cell {
+  cellId     String   @id
+  centerLat  Float
+  centerLng  Float
+  score      Float
+  updatedAt  DateTime @updatedAt
+}

@@ -1,4 +1,10 @@
 node_modules
+npm-debug.log
+
 .env
 dist
 .DS_Store
+
+# Prisma generated client
+**/.prisma
+**/node_modules/.prisma
