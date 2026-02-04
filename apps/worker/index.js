@@ -30,21 +30,43 @@ async function poll() {
   for (const msg of res.Messages) {
     const { key } = JSON.parse(msg.Body);
 
-    const reportId = key.split("/")[1].replace(".jpg", "");
+    // key should be: reports/<reportId>.jpg
+    const filename = key.split("/").pop();          // "<reportId>.jpg"
+    const reportId = filename?.replace(".jpg", ""); // "<reportId>"
+
+    if (!reportId || reportId.length < 20) {
+    console.log("Skipping non-report key:", key);
+    // still delete the message so it doesn't loop forever
+    await sqs.send(new DeleteMessageCommand({
+        QueueUrl: process.env.SQS_QUEUE_URL,
+        ReceiptHandle: msg.ReceiptHandle,
+    }));
+    continue;
+    }
 
     console.log("Processing report:", reportId);
 
-    await prisma.report.update({
-      where: { id: reportId },
-      data: { status: "PROCESSED", score: Math.random() },
-    });
+    const exists = await prisma.report.findUnique({ where: { id: reportId } });
 
-    await sqs.send(
-      new DeleteMessageCommand({
+    if (!exists) {
+    console.log("Report not found in DB, skipping:", reportId);
+    await sqs.send(new DeleteMessageCommand({
         QueueUrl: process.env.SQS_QUEUE_URL,
         ReceiptHandle: msg.ReceiptHandle,
-      }),
-    );
+    }));
+    continue;
+    }
+
+    await prisma.report.update({
+    where: { id: reportId },
+    data: { status: "PROCESSED", score: Math.random() },
+    });
+
+    await sqs.send(new DeleteMessageCommand({
+    QueueUrl: process.env.SQS_QUEUE_URL,
+    ReceiptHandle: msg.ReceiptHandle,
+    }));
+
   }
 }
 

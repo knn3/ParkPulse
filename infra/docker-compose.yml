@@ -10,6 +10,8 @@ services:
       POSTGRES_DB: parkpulse
     ports:
       - "5433:5432"
+    volumes:
+      - parkpulse-postgres-data:/var/lib/postgresql/data
 
   api:
     build: ../apps/api
@@ -28,6 +30,8 @@ services:
 
   worker:
     build: ../apps/worker
+    env_file:
+      - ../.env
     container_name: parkpulse-worker
     volumes:
       - ../apps/worker:/app
@@ -35,3 +39,6 @@ services:
       - postgres
     environment:
       - DATABASE_URL=postgresql://parkpulse:parkpulse@postgres:5432/parkpulse
+
+volumes:
+  parkpulse-postgres-data:
